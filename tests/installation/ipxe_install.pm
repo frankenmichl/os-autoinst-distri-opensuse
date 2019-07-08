@@ -115,7 +115,6 @@ sub run {
     # make sure to wait for a while befor changing the boot device again, in order to not change it too early
     sleep 120;
 
-    ipmitool('chassis bootdev disk');
     assert_screen('linux-login', 1800);
 }
 

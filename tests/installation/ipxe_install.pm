@@ -59,6 +59,15 @@ sub poweron_host {
     }
 }
 
+sub set_pxe_boot {
+    while (1) {
+        my $stdout = ipmitool('chassis bootparam get 5');
+        last if $stdout =~ m/Force PXE/;
+	ipmitool("chassis bootdev pxe");
+        sleep(3);
+    }
+}
+
 sub set_bootscript {
     my $host        = get_required_var('SUT_IP');
     my $ip          = inet_ntoa(inet_aton($host));
@@ -96,7 +105,7 @@ sub run {
 
     set_bootscript;
 
-    ipmitool('chassis bootdev pxe');
+    set_pxe_boot;
     poweron_host;
 
     select_console 'sol', await_console => 0;

@@ -12,6 +12,7 @@ vars:
   HANA: nfs://1c119.qa.suse.de/srv/nfs/sap/HANA2/SPS04rev46/x86_64
   INSTANCE_SID: NDB
   INSTANCE_ID: '00'
+  SEPARATE_HOME: 0
 schedule:
   - installation/ipxe_install
   - installation/welcome

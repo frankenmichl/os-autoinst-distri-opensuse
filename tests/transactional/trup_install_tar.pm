@@ -1,4 +1,4 @@
-# Copyright © 2020 SUSE LLC
+# Copyright © 2021 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,23 +13,22 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-# Summary: Module performs clena-up actions after libyui REST API usage with
-# the installer.
+# Summary: Module to install tar package via transactional-update. The system is
+# rebooted so changes take effect.
 
 # Maintainer: QA SLE YaST team <qa-sle-yast@suse.de>
 
 use strict;
 use warnings;
-use base "installbasetest";
+use base "opensusebasetest";
 use testapi;
-
-use Utils::Backends 'is_remote_backend';
-use YuiRestClient;
+use transactional;
 
 sub run {
-    # We setup libyui in bootloader on remote backends
-    return if is_remote_backend;
-    YuiRestClient::teardown_libyui();
+    select_console 'root-console';
+
+    record_info 'Install tar', 'Install package tar using transactional server and reboot';
+    trup_install "tar";
 }
 
 1;

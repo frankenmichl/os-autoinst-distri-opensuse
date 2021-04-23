@@ -1211,7 +1211,7 @@ sub load_consoletests {
         loadtest "console/mysql_srv";
         # disable these tests of server packages for SLED (poo#36436)
         load_console_server_tests() unless is_desktop;
-        load_extra_tests_docker()   unless (is_desktop || !is_released);
+        load_extra_tests_docker()   unless (!is_opensuse || is_desktop || !is_released);
     }
     if (check_var("DESKTOP", "xfce")) {
         loadtest "console/xfce_gnome_deps";
@@ -3047,11 +3047,11 @@ sub load_ha_cluster_tests {
 
     # Cluster initialisation
     if (get_var('USE_YAST_CLUSTER')) {
-        get_var('HA_CLUSTER_INIT') ? loadtest 'ha/yast_cluster_init' : loadtest 'ha/yast_cluster_join';
+        check_var('HA_CLUSTER_INIT', 'yes') ? loadtest 'ha/yast_cluster_init' : loadtest 'ha/yast_cluster_join';
         loadtest 'ha/sbd';
     }
     else {
-        get_var('HA_CLUSTER_INIT') ? loadtest 'ha/ha_cluster_init' : loadtest 'ha/ha_cluster_join';
+        check_var('HA_CLUSTER_INIT', 'yes') ? loadtest 'ha/ha_cluster_init' : loadtest 'ha/ha_cluster_join';
     }
 
     # Cluster tests are different if we use SLES4SAP
@@ -3066,7 +3066,7 @@ sub load_ha_cluster_tests {
             loadtest 'sles4sap/hana_install';
             loadtest 'sles4sap/hana_cluster';
         }
-        loadtest 'sles4sap/sap_suse_cluster_connector' if (get_var('HA_CLUSTER_INIT'));
+        loadtest 'sles4sap/sap_suse_cluster_connector' if (check_var('HA_CLUSTER_INIT', 'yes'));
     }
     else {
         # Test Hawk Web interface
@@ -3082,7 +3082,7 @@ sub load_ha_cluster_tests {
         if (get_var('HAWKGUI_TEST_ROLE') or get_var('HA_CLUSTER_HAPROXY')) {
             if (get_var('HAWKGUI_TEST_ROLE')) {
                 # Node1 will be fenced
-                boot_hdd_image if get_var('HA_CLUSTER_INIT');
+                boot_hdd_image if check_var('HA_CLUSTER_INIT', 'yes');
                 loadtest 'ha/check_after_reboot';
             }
             # Test Haproxy

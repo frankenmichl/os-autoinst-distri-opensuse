@@ -23,6 +23,7 @@ sub run {
 
     $self->select_serial_terminal;
 
+
     my $disk = script_output('TMP=$(pvdisplay -C -o pv_name,vg_name | grep system | cut -d \' \' -f 3); echo ${TMP::-1}');
     my $part = $disk . "3";
     my $is_hana = script_run("pvdisplay -C -o pv_name,vg_name | grep vg_hana");

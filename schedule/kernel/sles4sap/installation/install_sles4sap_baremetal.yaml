@@ -37,6 +37,7 @@ schedule:
   - boot/reconnect_mgmt_console
   - installation/first_boot
   - console/system_prepare
+  - kernel/prepare_sles4sap
   - '{{test_sles4sap}}'
   - '{{scc_deregister}}'
   - '{{generate_image}}'

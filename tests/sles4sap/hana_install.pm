@@ -64,8 +64,9 @@ sub get_hana_device_from_system {
 sub run {
     my ($self) = @_;
     my ($proto, $path) = $self->fix_path(get_required_var('HANA'));
-    my $sid    = get_required_var('INSTANCE_SID');
-    my $instid = get_required_var('INSTANCE_ID');
+    my $sid          = get_required_var('INSTANCE_SID');
+    my $instid       = get_required_var('INSTANCE_ID');
+    my $reclaim_root = get_var('RECLAIM_ROOT', 0);
 
     $self->select_serial_terminal;
     my $RAM = $self->get_total_mem();
@@ -150,7 +151,18 @@ sub run {
 
             # Now configure LVs and file systems for HANA
             assert_script_run "pvcreate -y $device";
-            assert_script_run "vgcreate -f $volgroup $device";
+            if ($reclaim_root) {
+                # reuse unused space on / and add a physical volume to the volume groupt
+                my $disk = script_output('TMP=$(mount | grep "on / " | cut -d \' \' -f 1); echo ${TMP::-1}');
+                my $part = $disk . "3";
+                assert_script_run("echo ',,V' | sfdisk $disk --force --append");
+                assert_script_run("partprobe");
+                assert_script_run("pvcreate $part");
+                assert_script_run("vgextend vg_hana $part");
+                assert_script_run "vgcreate -f $volgroup $device $part";
+            } else {
+                assert_script_run "vgcreate -f $volgroup $device";
+            }
             foreach my $mounts (keys %mountpts) {
                 assert_script_run "lvcreate -y -W y -n lv_$mounts --size $mountpts{$mounts}->{size} $volgroup";
                 assert_script_run "mkfs.xfs -f /dev/$volgroup/lv_$mounts";

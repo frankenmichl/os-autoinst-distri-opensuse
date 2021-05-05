@@ -11,6 +11,7 @@ vars:
   INSTANCE_SID: NDB
   INSTANCE_ID: '00'
   INSTANCE_TYPE: HBD
+  RECLAIM_ROOT: '1'
   START_AFTER_TEST: sles4sap_online_dvd_gnome
   WMP_TEST_REPO: https://gitlab.suse.de/lpalovsky/wmp_basic_tests/-/archive/master/wmp_basic_tests-master.tgz
 schedule:
@@ -28,7 +29,6 @@ conditional_schedule:
     TEST_SLES4SAP:
       1:
         - sles4sap/hana_install
-        - kernel/prepare_sles4sap
         - sles4sap/wmp_setup
         - sles4sap/wmp_basic_test
         #- reboot?

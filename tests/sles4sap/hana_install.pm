@@ -153,7 +153,7 @@ sub run {
             assert_script_run "pvcreate -y $device";
             if ($reclaim_root) {
                 # reuse unused space on / and add a physical volume to the volume groupt
-                my $disk = script_output('TMP=$(mount | grep "on / " | cut -d \' \' -f 1); echo ${TMP::-1}');
+                my $disk = script_output('for i in /dev/sd? ; do lsblk $i | grep system-root>/dev/null && echo $i; done');
                 my $part = $disk . "3";
                 assert_script_run("echo ',,V' | sfdisk $disk --force --append");
                 assert_script_run("partprobe");

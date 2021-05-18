@@ -63,8 +63,10 @@ sub run {
     my $sid          = get_required_var('INSTANCE_SID');
     my $sid2         = get_var('INSTANCE_SID_2');
     my $reclaim_root = get_var('RECLAIM_ROOT', 0);
+    my $device = get_var('HANA_INST_DEV', '');
 
     $self->select_serial_terminal;
+    my $RAM = $self->get_total_mem();
 
     # Mount points information: use the same paths and minimum sizes as the wizard (based on RAM size)
     my $full_size = ceil($RAM / 1024);      # Use the ceil value of RAM in GB

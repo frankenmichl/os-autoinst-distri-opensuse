@@ -29,7 +29,6 @@ conditional_schedule:
     TEST_SLES4SAP:
       1:
         - kernel/hana_install
-        - kernel/partition_for_hana
         - sles4sap/wmp_setup
         - sles4sap/wmp_basic_test
         #- reboot?

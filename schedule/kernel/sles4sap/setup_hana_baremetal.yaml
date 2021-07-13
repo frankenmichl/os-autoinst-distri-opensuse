@@ -12,7 +12,7 @@ vars:
   INSTANCE_ID: '00'
   INSTANCE_TYPE: HBD
   RECLAIM_ROOT: '1'
-  START_AFTER_TEST: sles4sap_online_dvd_gnome
+  #  START_AFTER_TEST: sles4sap_online_dvd_gnome
   WMP_TEST_REPO: https://gitlab.suse.de/lpalovsky/wmp_basic_tests/-/archive/master/wmp_basic_tests-master.tgz
 schedule:
   - boot/boot_to_desktop
@@ -29,8 +29,10 @@ conditional_schedule:
     TEST_SLES4SAP:
       1:
         - sles4sap/hana_install
+          #- kernel/wmp_simple
         - sles4sap/wmp_setup
         - sles4sap/wmp_check_process
+        - kernel/wmp_simple
   scc_deregister:
     SCC_DEREGISTER:
       1:

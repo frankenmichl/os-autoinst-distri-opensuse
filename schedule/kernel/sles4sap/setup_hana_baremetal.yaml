@@ -31,6 +31,7 @@ conditional_schedule:
         - sles4sap/hana_install
         - sles4sap/wmp_setup
         - sles4sap/wmp_check_process
+        - kernel/wmp_simple
   scc_deregister:
     SCC_DEREGISTER:
       1:

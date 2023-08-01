@@ -1,0 +1,10 @@
+---
+name: alp_baremetal
+description: >
+    Deploy ALP top baremetal machine
+vars:
+    YUI_REST_API: 1
+schedule:
+    - installation/ipxe_install
+    - microos/selfinstall
+    - shutdown/shutdown

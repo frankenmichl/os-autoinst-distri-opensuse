@@ -83,7 +83,7 @@ sub ibtest_master {
     barrier_wait('IBTEST_BEGIN');
     script_run("./ib-test.sh $args $master $slave", timeout => $timeout);
     script_run('tr -cd \'\11\12\15\40-\176\' < results/TEST-ib-test.xml > /tmp/results.xml');
-    parse_extra_log('XUnit', '/tmp/results.xml');
+    parse_extra_log('JUnit', '/tmp/results.xml');
 
     barrier_wait('IBTEST_DONE');
     $self->upload_ibtest_logs;
@@ -140,7 +140,7 @@ sub post_fail_hook {
 
     if ($role eq 'IBTEST_MASTER') {
         script_run('tr -cd \'\11\12\15\40-\176\' < results/TEST-ib-test.xml > /tmp/results.xml');
-        parse_extra_log('XUnit', '/tmp/results.xml');
+        parse_extra_log('JUnit', '/tmp/results.xml');
     }
 
     $self->upload_ibtest_logs;

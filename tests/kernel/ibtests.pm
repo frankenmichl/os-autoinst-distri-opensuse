@@ -110,24 +110,10 @@ sub run {
     exec_and_insert_password("ssh-copy-id -o StrictHostKeyChecking=no root\@$slave");
     script_run("/usr/bin/clear");
 
-    assert_script_run('nmcli device set ib0 managed no');
-    assert_script_run('nmcli device set ib1 managed no');
-    sleep(3);
-    assert_script_run('ip link set up dev ib0');
-    assert_script_run('ip link set up dev ib1');
-
     if ($role eq 'IBTEST_MASTER') {
-        assert_script_run('ip addr add fe80::1/64 dev ib0');
-        assert_script_run('ip addr add fe80::2/64 dev ib1');
-        sleep(5);
-        record_info("ip addr show", script_output('ip addr show'));
         $self->ibtest_master;
     }
     elsif ($role eq 'IBTEST_SLAVE') {
-        assert_script_run('ip addr add fe80::3/64 dev ib0');
-        assert_script_run('ip addr add fe80::4/64 dev ib1');
-        sleep(5);
-        record_info("ip addr show", script_output('ip addr show'));
         $self->ibtest_slave;
     }
 

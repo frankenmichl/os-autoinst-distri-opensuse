@@ -18,6 +18,7 @@ use Utils::Backends;
 use utils;
 use ipmi_backend_utils;
 use power_action_utils 'power_action';
+use package_utils 'install_package';
 
 sub run {
     my $protocol = get_var('MLX_PROTOCOL', 2);
@@ -38,7 +39,7 @@ sub run {
     select_serial_terminal;
 
     # install dependencies
-    zypper_call('--quiet in pciutils mstflint', timeout => 200);
+    install_package "pciutils mstflint";
 
     my @devices = split(' ', script_output("lspci | grep -i mellanox.*ConnectX-5 |cut  -d ' ' -f 1"));
 

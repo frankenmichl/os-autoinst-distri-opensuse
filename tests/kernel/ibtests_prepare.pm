@@ -23,16 +23,19 @@ sub run {
     my $packages = "rdma-core rdma-ndd iputils";
     my $packages_master = $packages . " git-core bc";
 
-
+    reconnect_mgmt_console;
     select_serial_terminal;
     permit_root_ssh_in_sol unless is_sle('16+');
 
     # unload firewall. MPI- and libfabric-tests require too many open ports
-    systemctl("disable --now " . opensusebasetest::firewall);
+    #systemctl("disable --now " . opensusebasetest::firewall);
 
     # create a ssh key if we don't have one
-    script_run('[ ! -f /root/.ssh/id_rsa ] && ssh-keygen -b 2048 -t rsa -q -N "" -f /root/.ssh/id_rsa');
-
+    if (script_run("test -f /root/.ssh/id_rsa") != 0) {
+        assert_script_run("mkdir -p /root/.ssh");
+        assert_script_run("ssh-keygen -b 2048 -t rsa -q -N \"\" -f /root/.ssh/id_rsa");
+    }
+    record_info("ssh key:", script_output("cat /root/.ssh/id_rsa.pub"));
     add_qa_head_repo(priority => 100);
 
     zypper_ar(get_var('SCIENCE_HPC_REPO'), no_gpg_check => 1, priority => 49) if get_var('SCIENCE_HPC_REPO', '');

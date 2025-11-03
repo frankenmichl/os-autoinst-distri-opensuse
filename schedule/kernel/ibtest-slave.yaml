@@ -34,8 +34,7 @@ schedule:
     - installation/await_install
     - installation/logs_from_installation_system
     - installation/reboot_after_installation
-    - installation/handle_reboot
-    - installation/first_boot
+    - kernel/update_kernel
     - kernel/ibtests_prepare
     - installation/handle_reboot
     - kernel/ibtests

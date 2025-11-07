@@ -1,4 +1,4 @@
-name:           ibtest-master
+name:           ibtest-master-sle15
 description:    >
     The master node for the infiniband testsuite (hpc-testing)
 vars:

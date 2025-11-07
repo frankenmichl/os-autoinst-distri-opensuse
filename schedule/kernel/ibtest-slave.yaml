@@ -1,4 +1,4 @@
-name:           ibtest-slave
+name:           ibtest-slave-sle15
 description:    >
     The slave node for the infiniband testsuite (hpc-testing)
 vars:
@@ -11,6 +11,7 @@ vars:
     IPXE: 1
     IPXE_HTTPSERVER: http://baremetal-support.qa.suse.de
     IPXE_CONSOLE: ttyS1,115200
+    PARALLEL_WITH: ibtest-master-sle15
     PATTERNS: base,minimal
     SCC_ADDONS: sdk
 schedule:

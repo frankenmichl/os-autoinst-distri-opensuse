@@ -28,39 +28,26 @@ use serial_terminal "select_serial_terminal";
 use lockapi;
 use utils;
 use Utils::Logging "export_logs_basic";
+use Kernel::nfs;
 
-# create a mountpoint and the corresponding export with
-# specified permissions
-sub create_mount_and_export {
-    my ($mountpoint, $cl, $permissions) = @_;
+# helper:; verify checksums of a list of files
+sub nfs_verify_server_data {
+    my ($mount_path) = @_;
+    my @flags = qw(direct dsync sync);
 
-    assert_script_run "mkdir -p $mountpoint";
-    assert_script_run "chmod 777 $mountpoint";
-    assert_script_run "echo $mountpoint $cl\\($permissions\\) >> /etc/exports";
+    record_info("VERIFY", "Checking data integrity in $mount_path");
+    assert_script_run("cd $mount_path && md5sum -c md5sum.txt");
+    my $expected_md5 = script_output("cut -d ' ' -f1 $mount_path/md5sum.txt");
+    foreach my $flag (@flags) {
+        my $file = "testfile_oflag_$flag";
+        assert_script_run("echo '$expected_md5  $file' | md5sum -c -",
+            fail_message => "Checksum mismatch for $file in $mount_path");
+    }
 }
 
-sub compare_checksums {
-    my ($file) = @_;
-
-    assert_script_run("md5sum $file > new_md5sum.txt");
-    record_info("$file: checksum", script_output("cat new_md5sum.txt"));
-
-    my $md5 = script_output("cut -d ' ' -f1 md5sum.txt");
-    my $new_md5 = script_output("cut -d ' ' -f1 new_md5sum.txt");
-
-    record_info("Checksums md5 $md5 newMd5: $new_md5");
-
-    die "checksums differ $md5 : $new_md5" unless ($md5 eq $new_md5);
-}
 
 sub run {
     my $self = @_;
-    my $kernel_nfs3 = 0;
-    my $kernel_nfs4 = 0;
-    my $kernel_nfs4_1 = 0;
-    my $kernel_nfs4_2 = 0;
-    my $kernel_nfsd_v3 = 0;
-    my $kernel_nfsd_v4 = 0;
     my $client = get_var('CLIENT_NODE', 'client-node00');
 
     select_serial_terminal();
@@ -74,14 +61,6 @@ sub run {
     my $nfs_permissions = get_var('NFS_PERMISSIONS', 'rw,sync,no_root_squash');
     my $nfs_permissions_async = get_var('NFS_PERMISSIONS_ASYNC', 'rw,async,no_root_squash');
 
-    # check kernel config options and set the variables
-    $kernel_nfs3 = 1 unless script_run('zgrep "CONFIG_NFS_V3=[my]" /proc/config.gz');
-    $kernel_nfs4 = 1 unless script_run('zgrep "CONFIG_NFS_V4=[my]" /proc/config.gz');
-    $kernel_nfs4_1 = 1 unless script_run('zgrep "CONFIG_NFS_V4_1=[my]" /proc/config.gz');
-    $kernel_nfs4_2 = 1 unless script_run('zgrep "CONFIG_NFS_V4_2=[my]" /proc/config.gz');
-    $kernel_nfsd_v3 = 1 unless script_run('zgrep "CONFIG_NFSD=[my]" /proc/config.gz');
-    $kernel_nfsd_v4 = 1 unless script_run('zgrep "CONFIG_NFSD_V4=[my]" /proc/config.gz');
-
     # following files are copied on the client side using dd with specific flags: direct, dsync, sync
     my $file_flag_direct = 'testfile_oflag_direct';
     my $file_flag_dsync = 'testfile_oflag_dsync';
@@ -91,19 +70,15 @@ sub run {
     zypper_call("in nfs-kernel-server");
 
     # configure our exports
-    if ($kernel_nfs3 == 1) {
+    if (verify_nfs_support('V3', server => 1)) {
         record_info('INFO', 'Kernel has support for NFSv3');
-        create_mount_and_export($nfs_mount_nfs3, $client, $nfs_permissions);
-        create_mount_and_export($nfs_mount_nfs3_async, $client, $nfs_permissions_async);
-    } else {
-        record_info('INFO', 'Kernel has no support for NFSv3, skipping NFSv3 tests');
+        create_export($nfs_mount_nfs3, $client, $nfs_permissions);
+        create_export($nfs_mount_nfs3_async, $client, $nfs_permissions_async);
     }
-    if ($kernel_nfs4 == 1) {
+    if (verify_nfs_support('V4', server => 1)) {
         record_info('INFO', 'Kernel has support for NFSv4');
-        create_mount_and_export($nfs_mount_nfs4, $client, $nfs_permissions);
-        create_mount_and_export($nfs_mount_nfs4_async, $client, $nfs_permissions_async);
-    } else {
-        record_info('INFO', 'Kernel has no support for NFSv4, skipping NFSv4 tests');
+        create_export($nfs_mount_nfs4, $client, $nfs_permissions);
+        create_export($nfs_mount_nfs4_async, $client, $nfs_permissions_async);
     }
 
     record_info("EXPORTS", script_output("cat /etc/exports"));
@@ -121,10 +96,9 @@ sub run {
     record_info("NFS stat for server", script_output("nfsstat -s"));
 
     barrier_wait("NFS_SERVER_ENABLED");
-    barrier_wait("NFS_CLIENT_ENABLED");
     barrier_wait("NFS_SERVER_CHECK");
 
-    if ($kernel_nfs3 == 1) {
+    if (verify_nfs_support('V3', server => 1) == 1) {
         #checking files in /nfs/shared_nfs3
         record_info("TESTS: NFS3");
         record_info("NFS3 list all files", script_output("ls $nfs_mount_nfs3"));
@@ -153,7 +127,7 @@ sub run {
         compare_checksums($file_flag_sync);
     }
 
-    if ($kernel_nfs4 == 1) {
+    if (verify_nfs_support('V4', server => 1) == 1) {
         #checking files in /nfs/shared_nfs4
         record_info("TESTS: NFS4");
 

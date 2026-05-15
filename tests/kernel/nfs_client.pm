@@ -1,6 +1,6 @@
 # SUSE's openQA tests
 #
-# Copyright 2023-2025 SUSE LLC
+# Copyright 2023-2026 SUSE LLC
 # SPDX-License-Identifier: FSFAP
 
 # Summary: NFS Client
@@ -35,7 +35,10 @@ sub nfs_run_io_tests {
     my @flags = qw(sync dsync direct);
 
     foreach my $path (@mounts) {
-        next if script_run("test -d $path && test -w $path") != 0;
+        if (script_run("test -d $path && test -w $path") != 0) {
+            record_info('INFO', "Skipping unusable mount point $path");
+            next;
+        }
 
         foreach my $flag (@flags) {
             my $out_file = "$path/testfile_oflag_$flag";
@@ -43,9 +46,9 @@ sub nfs_run_io_tests {
 
             if ($ret != 0) {
                 if ($flag eq 'direct') {
-                    record_info("NFS O_DIRECT failed on $path");
+                    record_info('INFO', "NFS O_DIRECT failed on $path. Skipping direct I/O check.");
                 } else {
-                    die "NFS IO failed for $flag on $path (Exit: $ret)";
+                    die "NFS IO failed for $flag on $path (exit: $ret)";
                 }
                 next;
             }
@@ -58,46 +61,39 @@ sub nfs_run_io_tests {
     }
 }
 
-
-
 sub run {
     select_serial_terminal();
-    record_info("hostname", script_output("hostname"));
+    record_info('hostname', script_output('hostname'));
 
     my $server_node = get_var('SERVER_NODE', 'server-node00');
     my @nfs_versions = qw(V3 V4);
-    my @active_mounts;
 
     install_package('nfs-client', trup_continue => 1);
 
-    barrier_wait("NFS_SERVER_ENABLED");
-    record_info("showmount", script_output("showmount -e $server_node"));
+    barrier_wait('NFS_SERVER_ENABLED');
+    record_info('showmount', script_output("showmount -e $server_node"));
 
-    assert_script_run("dd if=/dev/zero of=testfile bs=1024 count=10240");
-    assert_script_run("md5sum testfile > md5sum.txt");
+    assert_script_run('dd if=/dev/zero of=testfile bs=1024 count=10240');
+    assert_script_run('md5sum testfile > md5sum.txt');
 
     foreach my $ver (@nfs_versions) {
-        if (verify_nfs_support(version => $ver, is_server => 0)) {
-            record_info('INFO', "Kernel and Config support $ver client");
+        next unless verify_nfs_support(version => $ver, is_server => 0);
 
-            my $v_num = $ver =~ s/V//gr;
+        record_info('INFO', "Kernel and config support $ver client");
 
-            # Match server's path construction exactly
-            my $remote_base = get_var("NFS_SHARE_$ver", "/nfs/shared_$ver");
-            my $local_sync = get_var("NFS_LOCAL_$ver", "/home/local$ver");
-            my $local_async = $local_sync . "async";
+        my $v_num = $ver =~ s/V//gr;
+        my $remote_base = get_var("NFS_SHARE_$ver", "/nfs/shared_$ver");
+        my $local_sync = get_var("NFS_LOCAL_$ver", "/home/local$ver");
+        my $local_async = $local_sync . 'async';
 
-            mount_share($server_node, $remote_base, $local_sync, "nfsvers=$v_num,sync");
-            mount_share($server_node, "${remote_base}_async", $local_async, "nfsvers=$v_num");
+        mount_share($server_node, $remote_base, $local_sync, "nfsvers=$v_num,sync");
+        mount_share($server_node, "${remote_base}_async", $local_async, "nfsvers=$v_num");
 
-            nfs_run_io_tests($local_sync, $local_async);
-            push @active_mounts, ($local_sync, $local_async);
-        }
+        nfs_run_io_tests($local_sync, $local_async);
     }
-    barrier_wait("NFS_SERVER_CHECK");
+
+    barrier_wait('NFS_SERVER_CHECK');
 }
-
-
 
 sub test_flags {
     return {fatal => 1, milestone => 1};
